@@ -73,6 +73,34 @@ def main():
     print(f"\n[Step 2] Data split completed: {len(X_train)} training samples, {len(X_test)} test samples.")
 
     # ---------------------------------------------------------
+    # STEP 3: FEATURE SCALING (STANDARDIZATION)
+    # ---------------------------------------------------------
+    # Features have very different scales (e.g., CGPA is 4-10, attendance is 0-100%, internship is 1-60 months).
+    # StandardScaler transforms each feature to mean=0 and variance=1.
+    # IMPORTANT: We fit the scaler ONLY on X_train to avoid data leakage!
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    print("[Step 3] Feature scaling applied (StandardScaler fitted on training data only).")
+
+    # ---------------------------------------------------------
+    # STEP 4: ESTABLISH A BASELINE MODEL
+    # ---------------------------------------------------------
+    # A simple baseline (predicting the most frequent class) provides a benchmark
+    # to confirm that Logistic Regression actually learns meaningful patterns.
+    baseline = DummyClassifier(strategy="most_frequent")
+    baseline.fit(X_train, y_train)
+    baseline_acc = baseline.score(X_test, y_test)
+    print(f"\n[Step 4] Baseline Model (Dummy Most-Frequent) Accuracy: {baseline_acc:.4f} (50%)")
+
+    # ---------------------------------------------------------
+    # STEP 5: TRAIN THE LOGISTIC REGRESSION MODEL
+    # ---------------------------------------------------------
+    model = LogisticRegression(random_state=42)
+    model.fit(X_train_scaled, y_train)
+    print("[Step 5] Logistic Regression model trained successfully.")
+
+    # ---------------------------------------------------------
 
 if __name__ == '__main__':
     main()
