@@ -192,6 +192,45 @@ def main():
             print(f" • [DECREASES ELIGIBILITY CHANCE] {feat}: negative coefficient ({c:.3f}). Higher values reduce eligibility probability (Odds Ratio: {odds:.2f}x).")
 
     # ---------------------------------------------------------
+    # STEP 9: INTERACTIVE / SAMPLE PREDICTION FUNCTION
+    # ---------------------------------------------------------
+    print("\n" + "=" * 60)
+    print("  SAMPLE PREDICTION FOR A NEW STUDENT")
+    print("=" * 60)
 
-if __name__ == '__main__':
+    def predict_placement_eligibility(cgpa, attendance_pct, coding_score, projects_completed, internship_months, backlogs):
+        input_data = pd.DataFrame([{
+            'cgpa': cgpa,
+            'attendance_pct': attendance_pct,
+            'coding_score': coding_score,
+            'projects_completed': projects_completed,
+            'internship_months': internship_months,
+            'backlogs': backlogs
+        }])
+        # Scale the input using our fitted scaler
+        input_scaled = scaler.transform(input_data)
+        prob_eligible = model.predict_proba(input_scaled)[0, 1]
+        prediction = 1 if prob_eligible >= 0.5 else 0
+        status = "ELIGIBLE FOR PLACEMENT" if prediction == 1 else "NOT ELIGIBLE"
+        return status, prob_eligible
+
+    # Test Sample Student 1: Good attendance, multiple projects, high backlogs (in this synthetic dataset)
+    sample_student1 = {"cgpa": 7.8, "attendance_pct": 85.0, "coding_score": 3,
+                       "projects_completed": 5, "internship_months": 12, "backlogs": 4}
+    status1, prob1 = predict_placement_eligibility(**sample_student1)
+    print(f"Student A Profile: {sample_student1}")
+    print(f"Prediction: {status1} (Eligibility Probability: {prob1*100:.1f}%)\n")
+
+    # Test Sample Student 2: Low attendance, few projects
+    sample_student2 = {"cgpa": 6.2, "attendance_pct": 35.0, "coding_score": 6,
+                       "projects_completed": 1, "internship_months": 24, "backlogs": 1}
+    status2, prob2 = predict_placement_eligibility(**sample_student2)
+    print(f"Student B Profile: {sample_student2}")
+    print(f"Prediction: {status2} (Eligibility Probability: {prob2*100:.1f}%)")
+
+    print("\n" + "=" * 60)
+    print("  CAMPUSHIRE EXECUTION COMPLETE! ALL ARTIFACTS SAVED.")
+    print("=" * 60)
+
+if __name__ == "__main__":
     main()
