@@ -101,6 +101,97 @@ def main():
     print("[Step 5] Logistic Regression model trained successfully.")
 
     # ---------------------------------------------------------
+    # STEP 6: MODEL EVALUATION ON UNSEEN TEST DATA
+    # ---------------------------------------------------------
+    # Predict binary class (0 or 1)
+    y_pred = model.predict(X_test_scaled)
+    # Predict probability of meeting eligibility (target = 1)
+    y_prob = model.predict_proba(X_test_scaled)[:, 1]
+
+    # Calculate key metrics
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
+    roc_auc = roc_auc_score(y_test, y_prob)
+    cm = confusion_matrix(y_test, y_pred)
+
+    print("\n" + "=" * 60)
+    print("  EVALUATION METRICS SUMMARY (TEST SET)")
+    print("=" * 60)
+    print(f"Accuracy  : {accuracy:.4f} ({accuracy * 100:.2f}%)")
+    print(f"Precision : {precision:.4f} (When model predicts eligible, it is correct {precision * 100:.1f}% of the time)")
+    print(f"Recall    : {recall:.4f} (Model successfully identified {recall * 100:.1f}% of all eligible students)")
+    print(f"F1-Score  : {f1:.4f} (Harmonic mean of precision and recall)")
+    print(f"ROC-AUC   : {roc_auc:.4f} (Discriminative ability between eligible vs non-eligible)")
+
+    print("\nDetailed Classification Report:")
+    print(classification_report(y_test, y_pred, target_names=["Not Eligible (0)", "Eligible (1)"]))
+
+    print("Confusion Matrix:")
+    print(f"                       Predicted Not Eligible (0)   Predicted Eligible (1)")
+    print(f"Actual Not Eligible (0)        {cm[0, 0]:<28} {cm[0, 1]}")
+    print(f"Actual Eligible (1)            {cm[1, 0]:<28} {cm[1, 1]}")
+
+    # ---------------------------------------------------------
+    # STEP 7: SAVE VISUAL EVALUATION PLOTS
+    # ---------------------------------------------------------
+    output_dir = os.path.join(os.path.dirname(__file__), "outputs")
+    os.makedirs(output_dir, exist_ok=True)
+
+    # 1. Confusion Matrix Plot
+    plt.figure(figsize=(6, 5))
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Greens",
+                xticklabels=["Not Eligible (0)", "Eligible (1)"],
+                yticklabels=["Not Eligible (0)", "Eligible (1)"])
+    plt.title("Confusion Matrix - CampusHire Eligibility Model")
+    plt.xlabel("Predicted Class")
+    plt.ylabel("Actual Class")
+    plt.tight_layout()
+    cm_plot_path = os.path.join(output_dir, "confusion_matrix.png")
+    plt.savefig(cm_plot_path, dpi=200)
+    plt.close()
+    print(f"\n[Step 7] Saved Confusion Matrix plot: {cm_plot_path}")
+
+    # 2. Feature Coefficients Plot
+    coefs = model.coef_[0]
+    coef_df = pd.DataFrame({
+        "Feature": feature_names,
+        "Coefficient": coefs,
+        "Odds_Ratio": np.exp(coefs)
+    }).sort_values(by="Coefficient", ascending=True)
+
+    plt.figure(figsize=(8, 5))
+    colors = ['#e74c3c' if c < 0 else '#2ecc71' for c in coef_df["Coefficient"]]
+    plt.barh(coef_df["Feature"], coef_df["Coefficient"], color=colors)
+    plt.axvline(0, color="black", linestyle="--", linewidth=0.8)
+    plt.title("Feature Coefficients (Direction of Impact on Placement Eligibility)")
+    plt.xlabel("Logistic Regression Coefficient (Log-Odds)")
+    plt.ylabel("Features")
+    plt.tight_layout()
+    feat_plot_path = os.path.join(output_dir, "feature_coefficients.png")
+    plt.savefig(feat_plot_path, dpi=200)
+    plt.close()
+    print(f"[Step 7] Saved Feature Coefficients plot: {feat_plot_path}")
+
+    # ---------------------------------------------------------
+    # STEP 8: INTERPRET COEFFICIENTS IN PLAIN LANGUAGE
+    # ---------------------------------------------------------
+    print("\n" + "=" * 60)
+    print("  COEFFICIENT & FEATURE IMPACT INTERPRETATION")
+    print("=" * 60)
+    print(coef_df.to_string(index=False))
+    print("\nPractical Understanding:")
+    for _, row in coef_df.iterrows():
+        feat = row['Feature']
+        c = row['Coefficient']
+        odds = row['Odds_Ratio']
+        if c > 0:
+            print(f" • [INCREASES ELIGIBILITY CHANCE] {feat}: positive coefficient ({c:.3f}). Higher values boost eligibility probability (Odds Ratio: {odds:.2f}x).")
+        else:
+            print(f" • [DECREASES ELIGIBILITY CHANCE] {feat}: negative coefficient ({c:.3f}). Higher values reduce eligibility probability (Odds Ratio: {odds:.2f}x).")
+
+    # ---------------------------------------------------------
 
 if __name__ == '__main__':
     main()
